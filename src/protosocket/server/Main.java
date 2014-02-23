@@ -1,4 +1,4 @@
-package protosocket.multithreads;
+package protosocket.server;
 
 public class Main {
 

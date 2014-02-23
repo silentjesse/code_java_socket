@@ -50,6 +50,10 @@ public class SelectorThread implements Runnable {
                         switch (req.getType()) {
                             case CHANNEL_INTERESTSET:
                                 key = req.getChannel().keyFor(this.selector);
+                                if(key == null){
+                                	System.out.println("---------->空指针,该通道注册异常" );
+                                	System.exit(0);
+                                }
                                 key.interestOps(req.getInterestSet());
                                 break;
                             case CHANNEL_REGISTER:
@@ -84,13 +88,17 @@ public class SelectorThread implements Runnable {
 
                     // Check what event is available and deal with it
                     if (key.isConnectable()) {
+                    	System.out.println("--->connectable");
                         this.finishConnection(key);
                     }
                     else if (key.isAcceptable()) {
+                    	System.out.println("--->acceptable");
                         this.accept(key);
                     } else if (key.isReadable()) {
+                    	System.out.println("--->readable");
                         this.read(key);
                     } else if (key.isWritable()) {
+                    	System.out.println("--->writable");
                         this.write(key);
                     }
                 }
@@ -184,6 +192,7 @@ public class SelectorThread implements Runnable {
             // Write until there's not more data ...
             while (!queue.isEmpty()) {
                 ByteBuffer buf = ByteBuffer.wrap( queue.get(0));
+               // System.out.println(socketChannel.isConnected() + " " + socketChannel.isOpen() + " " + socketChannel.);
                 socketChannel.write(buf);
                
                 if (buf.remaining() > 0) {

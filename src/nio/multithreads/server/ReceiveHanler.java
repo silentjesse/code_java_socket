@@ -55,7 +55,7 @@ public class ReceiveHanler implements Runnable {
 		SocketChannel channel = data.getChannel();
 		Object id = channelIds.get(data.getChannel());
 		byte[] buffer = data.getBuffer();
-		
+		System.out.println("there is " + SendHandler.inputs.size() + " msg in input pool");
 		if(id == null){
 			System.out.println("==========================>unknown id, let's parse this msg");  
 			//为socket连接配置唯一身份
@@ -69,6 +69,7 @@ public class ReceiveHanler implements Runnable {
 			 this.component.updateActiveTime(channel);
 			 data.setBuffer(("your id is "+ id).getBytes());
 			 synchronized (SendHandler.inputs) {
+				 	
 					SendHandler.inputs.add(data);
 					SendHandler.inputs.notifyAll();
 				}

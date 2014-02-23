@@ -1,4 +1,4 @@
-package protosocket.multithreads;
+package protosocket.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
