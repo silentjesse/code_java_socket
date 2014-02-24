@@ -26,6 +26,9 @@ public class WriteThread  implements Runnable{
 						
 						
 						String msg = msgQueue.remove(0); 
+						if(msg.equals("655")){
+							System.out.println();
+						}
 						client.write(msg.getBytes());
 						System.out.println("xxxxxxxxxx:"+msg);
 						client. flush();

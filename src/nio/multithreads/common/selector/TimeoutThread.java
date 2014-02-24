@@ -32,7 +32,7 @@ public class TimeoutThread implements Runnable {
 			}
 			
 			try {
-				Thread.sleep(1000);//2s查询一次
+				Thread.sleep(2000);//2s查询一次
 			} catch (InterruptedException e) { 
 				e.printStackTrace();
 			}

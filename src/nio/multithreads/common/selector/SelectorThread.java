@@ -4,6 +4,7 @@ import java.io.IOException;
  
 import java.nio.ByteBuffer;
  
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -51,15 +52,14 @@ public class SelectorThread implements Runnable {
                             case CHANNEL_INTERESTSET:
                             	System.out.println("**********改变通道兴趣" + req.getChannel());
                                 key = req.getChannel().keyFor(this.selector);
-                                if(key == null){
-                                	System.out.println("通道不在注册列表中===>清除该通道信息");
+                                if(key == null || !req.getChannel().isOpen()){
+                                	System.out.println("通道不在注册列表中或者已被关闭===>清除该通道信息");
                                 	//this.component.closeChannel((SocketChannel) req.getChannel());
-                                	req.getChannel().close();
-	   	                        	 this.component.removeChannelState((SocketChannel)req.getChannel());//从状态列表中去掉。
-	   	                        	 this.component.getOuts().remove((SocketChannel)req.getChannel());//将要发送出去的消息去掉
-	   	                        	
+                                	 
+	   	                        	cleanChannel(req.getChannel());
                                 }else{
                                 	 key.interestOps(req.getInterestSet());
+                                	 System.out.println("interest in " + req.getInterestSet());
                                 }
                                 break;
                             case CHANNEL_REGISTER:
@@ -70,9 +70,7 @@ public class SelectorThread implements Runnable {
                             	System.out.println("**********开始注销通道" + req.getChannel());
                             	key = req.getChannel().keyFor(this.selector);
                             	if(key != null){key.cancel();} 
-	                        	 req.getChannel().close();
-	                        	 this.component.removeChannelState((SocketChannel)req.getChannel());//从状态列表中去掉。
-	                        	 this.component.getOuts().remove((SocketChannel)req.getChannel());//将要发送出去的消息去掉
+	                        	cleanChannel(req.getChannel());
 	                        	
                             	break;
                             default:
@@ -81,16 +79,18 @@ public class SelectorThread implements Runnable {
                     }
                     opsRequests.clear();
                 }
-
+                
+                System.out.println("----->进入查询");
                 // Wait for an event one of the registered channels
                 this.selector.select();
+                System.out.println("----->查询完毕");
                 // Iterate over the set of keys for which events are available
                 Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
                 while (selectedKeys.hasNext()) {
                     key = (SelectionKey) selectedKeys.next();
                     selectedKeys.remove();
-
                     if (!key.isValid()) {
+                    	System.out.println("key invalid");
                         continue;
                     }
 
@@ -108,7 +108,12 @@ public class SelectorThread implements Runnable {
                     } else if (key.isWritable()) {
                     	
                         this.write(key);
+                    }else{
+                    	System.out.println("key unknown");
                     }
+                    
+                   
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -116,6 +121,13 @@ public class SelectorThread implements Runnable {
         }
     }
 	
+	private void cleanChannel(SelectableChannel channel) throws IOException {
+			channel.close();
+    	 this.component.removeChannelState((SocketChannel)channel);//从状态列表中去掉。
+    	 this.component.getOuts().remove((SocketChannel)channel);//将要发送出去的消息去掉
+		
+	}
+
 	private void accept(SelectionKey key) throws IOException {
         // For an accept to be pending the channel must be a server socket channel.
         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
@@ -194,10 +206,11 @@ public class SelectorThread implements Runnable {
         
     }
 
-    private void write(SelectionKey key) throws IOException {
+    private void write(SelectionKey key) throws IOException   {
     	 
-    	System.out.println("--->writable");
+    	
         SocketChannel socketChannel = (SocketChannel) key.channel();
+        System.out.println("--->writable:" + socketChannel);
         List<byte[]> bufferData = this.component.getOuts().get(socketChannel);
         boolean noData = true;
         synchronized (bufferData) {
@@ -207,15 +220,22 @@ public class SelectorThread implements Runnable {
                 ByteBuffer buf = ByteBuffer.wrap( queue.get(0));
                // System.out.println("--->writable content:1"   );
                // System.out.println(socketChannel.isConnected() + " " + socketChannel.isOpen() + " " + socketChannel.);
-                socketChannel.write(buf);
-                 
-                //System.out.println("--->writable content :2"   );
+               
+                try {
+                	System.out.println("---->before write");
+					socketChannel.write(buf);
+					System.out.println("---->after write");
+				} catch (IOException e) {
+					 queue.remove(0);
+					throw e;
+				}
+				 
+               
                 if (buf.remaining() > 0) {
-                    // ... or the socket's buffer fills up
+                    // ... or the socket's buffer fills up 
                     break;
                 }
                 queue.remove(0);
-               // System.out.println("--->writable content size: " + queue.size()   );
                
             }
 
