@@ -26,7 +26,6 @@ public class Component {
 	    	private EnumChannelType( ){
 	    		 
 	    	}
-		  
 	    }
  
 	private Selector    selector = null;
@@ -211,6 +210,7 @@ public class Component {
 	
 	
 	public void addOutput(SocketChannel socketChannel, byte[] buffer){
+		
 		List<byte[]>  queue =  this.outs.get(socketChannel);
 		if(queue == null){
 			queue = new LinkedList<byte[]>();
@@ -220,7 +220,7 @@ public class Component {
 		}
 		
 		this.outs.put(socketChannel, queue);
-		
+		System.out.println("===========>output queue size =" + queue.size());
 		this.requestChannelOps(socketChannel, EnumRequestType.CHANNEL_INTERESTSET, SelectionKey.OP_WRITE);
 		this.selector.wakeup();
 		
@@ -241,7 +241,7 @@ public class Component {
 	 */
 	public void closeChannel(SocketChannel channel) {
 		this.requestChannelOps(channel, EnumRequestType.CHANNEL_unREGISTER, 0);  
-		System.out.println("====>closeing one channel :" + channel);
+		//System.out.println("====>closeing one channel :" + channel);
 		this.selector.wakeup();
 	}
 

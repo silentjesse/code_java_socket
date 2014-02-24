@@ -49,23 +49,31 @@ public class SelectorThread implements Runnable {
                         ChannelOpsRequest req = changes.next();
                         switch (req.getType()) {
                             case CHANNEL_INTERESTSET:
+                            	System.out.println("**********改变通道兴趣" + req.getChannel());
                                 key = req.getChannel().keyFor(this.selector);
                                 if(key == null){
-                                	System.out.println("---------->空指针,该通道注册异常" );
-                                	System.exit(0);
+                                	System.out.println("通道不在注册列表中===>清除该通道信息");
+                                	//this.component.closeChannel((SocketChannel) req.getChannel());
+                                	req.getChannel().close();
+	   	                        	 this.component.removeChannelState((SocketChannel)req.getChannel());//从状态列表中去掉。
+	   	                        	 this.component.getOuts().remove((SocketChannel)req.getChannel());//将要发送出去的消息去掉
+	   	                        	
+                                }else{
+                                	 key.interestOps(req.getInterestSet());
                                 }
-                                key.interestOps(req.getInterestSet());
                                 break;
                             case CHANNEL_REGISTER:
+                            	System.out.println("**********注册通道" + req.getChannel());
                             	key = req.getChannel().register(this.selector, req.getInterestSet()); 
                             	break;
                             case CHANNEL_unREGISTER:
-                            	 key = req.getChannel().keyFor(this.selector);
-                            	 key.cancel();
-                            	 req.getChannel().close();
-                            	 this.component.removeChannelState((SocketChannel)req.getChannel());//从状态列表中去掉。
-                            	 this.component.getOuts().remove((SocketChannel)req.getChannel());//将要发送出去的消息去掉
-                            	
+                            	System.out.println("**********开始注销通道" + req.getChannel());
+                            	key = req.getChannel().keyFor(this.selector);
+                            	if(key != null){key.cancel();} 
+	                        	 req.getChannel().close();
+	                        	 this.component.removeChannelState((SocketChannel)req.getChannel());//从状态列表中去掉。
+	                        	 this.component.getOuts().remove((SocketChannel)req.getChannel());//将要发送出去的消息去掉
+	                        	
                             	break;
                             default:
                             	break;
@@ -98,7 +106,7 @@ public class SelectorThread implements Runnable {
                     	System.out.println("--->readable");
                         this.read(key);
                     } else if (key.isWritable()) {
-                    	System.out.println("--->writable");
+                    	
                         this.write(key);
                     }
                 }
@@ -124,7 +132,7 @@ public class SelectorThread implements Runnable {
         
         //供给超时线程检查是否超时
         this.component.addNewChannelState(socketChannel);
-       
+        
     }
 
 	private void finishConnection(SelectionKey key) throws IOException {
@@ -136,7 +144,8 @@ public class SelectorThread implements Runnable {
 	      socketChannel.finishConnect();
 	    } catch (IOException e) {
 	      // Cancel the channel's registration with our selector
-	      this.component.requestChannelOps(socketChannel, ChannelOpsRequest.EnumRequestType.CHANNEL_unREGISTER, 0);
+	      //this.component.requestChannelOps(socketChannel, ChannelOpsRequest.EnumRequestType.CHANNEL_unREGISTER, 0);
+	    	this.component.closeChannel(socketChannel);
 	      this.component.addInput(socketChannel, null, 0);
 	      return;
 	    }
@@ -163,7 +172,8 @@ public class SelectorThread implements Runnable {
         } catch (IOException e) {
             // The remote forcibly closed the connection, cancel
             // the selection key and close the channel.
-        	this.component.requestChannelOps(socketChannel, ChannelOpsRequest.EnumRequestType.CHANNEL_unREGISTER, 0);
+         
+        	this.component.closeChannel(socketChannel);
         	this.component.addInput(socketChannel, null, 0);
             return;
         }
@@ -171,7 +181,8 @@ public class SelectorThread implements Runnable {
         if (numRead == -1) {
             // Remote entity shut the socket down cleanly. Do the
             // same from our end and cancel the channel.
-        	this.component.requestChannelOps(socketChannel, ChannelOpsRequest.EnumRequestType.CHANNEL_unREGISTER, 0);
+        	 
+        	this.component.closeChannel(socketChannel);
         	this.component.addInput(socketChannel, null, 0);
             return;
         }
@@ -184,30 +195,35 @@ public class SelectorThread implements Runnable {
     }
 
     private void write(SelectionKey key) throws IOException {
+    	 
+    	System.out.println("--->writable");
         SocketChannel socketChannel = (SocketChannel) key.channel();
         List<byte[]> bufferData = this.component.getOuts().get(socketChannel);
-        boolean noData = false;
+        boolean noData = true;
         synchronized (bufferData) {
             List<byte[]> queue = bufferData; 
             // Write until there's not more data ...
             while (!queue.isEmpty()) {
                 ByteBuffer buf = ByteBuffer.wrap( queue.get(0));
+               // System.out.println("--->writable content:1"   );
                // System.out.println(socketChannel.isConnected() + " " + socketChannel.isOpen() + " " + socketChannel.);
                 socketChannel.write(buf);
-               
+                 
+                //System.out.println("--->writable content :2"   );
                 if (buf.remaining() > 0) {
                     // ... or the socket's buffer fills up
                     break;
                 }
                 queue.remove(0);
+               // System.out.println("--->writable content size: " + queue.size()   );
                
             }
 
-            if (queue.isEmpty()) {
+            if (!queue.isEmpty()) {
                 // We wrote away all data, so we're no longer interested
                 // in writing on this socket. Switch back to waiting for
                 // data.
-            	noData = true; 
+            	noData = false; 
             }
         }
         

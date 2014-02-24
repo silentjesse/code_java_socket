@@ -20,7 +20,7 @@ public class Startup {
 		new Thread(scanThread).start();
 		
 		ReadThread readThread = new ReadThread(client); 
-		new Thread(readThread).start();
+		//new Thread(readThread).start();
 		
 	}
 

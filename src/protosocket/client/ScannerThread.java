@@ -13,13 +13,13 @@ public class ScannerThread implements Runnable{
 		while(true){
 			synchronized (WriteThread.msgQueue) {
 				try {
+					System.out.println("------------>" + index);
+					WriteThread.msgQueue.add(Integer.toString(index));
+					index ++;
 					
-					WriteThread.msgQueue.add(Integer.toString(index));
-					index ++;
-					System.out.println("------------>" + index);
-					WriteThread.msgQueue.add(Integer.toString(index));
-					index ++;
-					System.out.println("------------>" + index);
+					//WriteThread.msgQueue.add(Integer.toString(index));
+					//index ++;
+					//System.out.println("------------>" + index);
 					
 					WriteThread.msgQueue.notifyAll();
 					
@@ -30,7 +30,9 @@ public class ScannerThread implements Runnable{
 				
 			}
 			try {
-				Thread.sleep(1000);
+				//Thread.sleep(10000);
+				//Thread.sleep(1000);
+				Thread.sleep(20);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

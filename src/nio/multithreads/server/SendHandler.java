@@ -29,8 +29,7 @@ public class SendHandler implements Runnable {
 	                //恰巧碰上非空池的处理程序将跳出while(pool.isEmpty())循环并攫取池中的第一个连接
 	                data = inputs.remove(0); 
 	            }
-				handleData(data);
-				 
+				handleData(data); 
 	        }
 	}
 	private void handleData(SocketChannelData data) {

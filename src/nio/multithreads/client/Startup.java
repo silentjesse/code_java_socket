@@ -18,11 +18,12 @@ public class Startup {
 		component.createChannel(EnumChannelType.CLIENT, InetAddress.getByName("localhost"), 9090);
 		
 		Thread receiveHanler = new Thread(new ReceiveHanler(component)) ;
-		Thread sendHandler =new Thread( new SendHandler(component));
+		//Thread sendHandler =new Thread( new SendHandler(component));
+		Thread sendHandler =new Thread( new SendHandler2(component));
 		Thread selectorThread = new Thread(new SelectorThread(component)) ;
 		  
 		receiveHanler.start();
-		sendHandler.start();
+		sendHandler.start(); 
 		selectorThread.start();
 		
 		 

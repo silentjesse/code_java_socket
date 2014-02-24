@@ -8,18 +8,26 @@ import java.util.List;
 import nio.multithreads.common.dto.Component;
 import nio.multithreads.common.dto.SocketChannelData;
 
-public class SendHandler implements Runnable {
+public class SendHandler2 implements Runnable {
 	private Component component = null;
 	public static  List<SocketChannelData> inputs = new LinkedList<SocketChannelData>();
 	
-	public SendHandler( Component component ) {
+	public SendHandler2( Component component ) {
 		this.component = component ;
 	}
-	public void run() {  
+	
+	int index = 0;
+	public void run() {
+		  try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
 		 while(true) {
 			 byte inBuffer[] = new byte[100];
 			 SocketChannelData data = null;
-	            /*synchronized(inputs) {
+	            /*synchronized(inpfuts) {
 	                while(inputs.isEmpty()) {
 	                    try {
 	                    	//对池上的wait()的调用释放锁，而wait()接着就在自己返回之前再次攫取该锁
@@ -32,7 +40,7 @@ public class SendHandler implements Runnable {
 	                //恰巧碰上非空池的处理程序将跳出while(pool.isEmpty())循环并攫取池中的第一个连接
 	                data = inputs.remove(0); 
 	            }*/
-			 int size = 0 ;
+			 /*int size = 0 ;
 			 try {
 				 size = System.in.read(inBuffer);
 			} catch (IOException e) {
@@ -41,12 +49,19 @@ public class SendHandler implements Runnable {
 			}
 			
 			byte[] buffer = new byte[size];
-			System.arraycopy(inBuffer, 0, buffer, 0, size);
+			System.arraycopy(inBuffer, 0, buffer, 0, size);*/
+			 
 			 data = new SocketChannelData();
 			 data.setChannel((SocketChannel) this.component.getChannel());
-			 data.setBuffer(buffer);
+			 data.setBuffer(Integer.toString(index).getBytes());
 				handleData(data);
-				 
+			index++;
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	        }
 	}
 	private void handleData(SocketChannelData data) {

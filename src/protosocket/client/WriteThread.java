@@ -24,9 +24,10 @@ public class WriteThread  implements Runnable{
 				if(msgQueue.size() != 0){ 
 					try {
 						
-						System.out.println("xxxxxxxxxx"+ msgQueue.size());
+						
 						String msg = msgQueue.remove(0); 
 						client.write(msg.getBytes());
+						System.out.println("xxxxxxxxxx:"+msg);
 						client. flush();
 					} catch (Exception e) {
 						e.printStackTrace();

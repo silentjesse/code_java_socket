@@ -55,6 +55,11 @@ public class ReceiveHanler implements Runnable {
 		SocketChannel channel = data.getChannel();
 		Object id = channelIds.get(data.getChannel());
 		byte[] buffer = data.getBuffer();
+	 	if(buffer == null){//如果为null,则表示selectorThread通道receive handler线程该通道被关闭了
+			System.out.println("==========================>channel " + channel + " has been closed by client....");
+			return;
+		} 
+		
 		System.out.println("there is " + SendHandler.inputs.size() + " msg in input pool");
 		if(id == null){
 			System.out.println("==========================>unknown id, let's parse this msg");  
@@ -76,20 +81,13 @@ public class ReceiveHanler implements Runnable {
 			return;
 		}
 		
-		 
-		
-		
-		if(buffer == null){//如果为null,则表示selectorThread通道receive handler线程该通道被关闭了
-			System.out.println("==========================>channel " + id + " has been closed by client....");
-			return;
-		}else{
-			this.component.updateActiveTime(channel);
-			System.out.println("==========================>receive msg from " + id + ":" + new String(buffer));
-			synchronized (SendHandler.inputs) {
-				SendHandler.inputs.add(data);
-				SendHandler.inputs.notifyAll();
-			}
+		this.component.updateActiveTime(channel);
+		System.out.println("==========================>receive msg from " + id + ":" + new String(buffer));
+		synchronized (SendHandler.inputs) {
+			SendHandler.inputs.add(data);
+			SendHandler.inputs.notifyAll();
 		}
+		 
 		
 		
 	}
